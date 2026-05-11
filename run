@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Political Quiz</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      max-width: 800px;
+      margin: auto;
+      color: white;
+      text-align: center;
+
+      background: linear-gradient(to right,
+        rgba(255,0,0,0.4) 50%,
+        rgba(0,0,255,0.4) 50%
+      ),
+      linear-gradient(to bottom,
+        rgba(255,255,0,0.4) 50%,
+        rgba(0,255,0,0.4) 50%
+      );
+      background-blend-mode: multiply;
+    }
+
+    .container {
+      background: rgba(0,0,0,0.75);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    .question {
+      margin-bottom: 20px;
+    }
+
+    select, button {
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 14px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    img {
+      max-width: 250px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Political Quiz</h1>
+
+<form id="quizForm"></form>
+
+<submit button now properly contained -->
+<div id="submitSection">
+  <button onclick="submitQuiz()">Submit</button>
+</div>
+
+<div id="result" class="hidden">
+  <h2 id="resultText"></h2>
+
+  <h3 id="resultName"></h3>
+
+  <img id="resultImage" alt="result image" />
+
+  <br><br>
+
+  <a id="resultLink" target="_blank"></a>
+
+  <br><br>
+
+  <button onclick="retakeQuiz()">Not happy? Try again!</button>
+</div>
+
+</div>
+
+<script>
+
+// ----------------------
+// RESULT DATABASE
+// ----------------------
+const resultsData = {
+  "Libertarian": {
+    name: "Ron Paul",
+    link: "https://en.wikipedia.org/wiki/Ron_Paul",
+    image: "https://upload.wikimedia.org/wikipedia/commons/2/28/Ron_Paul%2C_official_Congressional_photo_portrait.jpg"
+  },
+  "Democratic Socialist": {
+    name: "Bernie Sanders",
+    link: "https://en.wikipedia.org/wiki/Bernie_Sanders",
+    image: "https://upload.wikimedia.org/wikipedia/commons/0/02/Bernie_Sanders_%2849880607782%29_%28cropped%29.jpg"
+  },
+  "Socialist": {
+    name: "Karl Marx",
+    link: "https://en.wikipedia.org/wiki/Karl_Marx",
+    image: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Karl_Marx.jpg"
+  },
+  "Progressive": {
+    name: "Alexandria Ocasio-Cortez",
+    link: "https://en.wikipedia.org/wiki/Alexandria_Ocasio-Cortez",
+    image: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Alexandria_Ocasio-Cortez_Official_Portrait.jpg"
+  },
+  "MAGA": {
+    name: "Donald Trump",
+    link: "https://en.wikipedia.org/wiki/Donald_Trump",
+    image: "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg"
+  },
+  "Neo-Con": {
+    name: "George W. Bush",
+    link: "https://en.wikipedia.org/wiki/George_W._Bush",
+    image: "https://upload.wikimedia.org/wikipedia/commons/d/d4/George-W-Bush.jpeg"
+  },
+  "Moderate": {
+    name: "Moderate / Centrist",
+    link: "https://en.wikipedia.org/wiki/Politics_of_the_United_States",
+    image: "https://upload.wikimedia.org/wikipedia/commons/8/8e/US_Capitol_west_front_edit2.jpg"
+  }
+};
+
+// ----------------------
+// QUESTIONS
+// ----------------------
+const questions = [
+
+  { text: "Government should take active role in economy", axis: "econ", weight: 1 },
+  { text: "Taxes should fund public services", axis: "econ", weight: 1 },
+  { text: "Taxation is immoral", axis: "econ", weight: -1 },
+  { text: "Everyone should receive basic services", axis: "econ", weight: 1 },
+  { text: "Free markets work best", axis: "econ", weight: -1 },
+  { text: "Corporations should be regulated", axis: "econ", weight: 1 },
+
+  { text: "Personal liberties above security", axis: "social", weight: 1 },
+  { text: "Security over freedom", axis: "social", weight: -1 },
+  { text: "Free speech is absolute", axis: "social", weight: 1 },
+  { text: "Conscription is acceptable", axis: "social", weight: -1 },
+  { text: "Equal before law", axis: "social", weight: 1 },
+  { text: "AI should be regulated", axis: "social", weight: -1 },
+
+  { text: "US should be globally involved", axis: "global", weight: 1 },
+  { text: "Nation defined by native people", axis: "global", weight: -1 },
+  { text: "Climate change is top priority", axis: "global", weight: 1 },
+  { text: "International orgs should influence policy", axis: "global", weight: 1 },
+  { text: "Free trade should be open", axis: "global", weight: 1 },
+  { text: "Military strength > diplomacy", axis: "global", weight: -1 },
+
+  { text: "Immigration", axis: "global", special: true }
+];
+
+// ----------------------
+// BUILD QUIZ
+// ----------------------
+const form = document.getElementById("quizForm");
+
+questions.forEach((q, i) => {
+  const div = document.createElement("div");
+  div.className = "question";
+
+  const p = document.createElement("p");
+  p.innerText = q.text;
+  div.appendChild(p);
+
+  const select = document.createElement("select");
+  select.name = "q" + i;
+
+  const options = q.special ? [
+    [-2,"A. Restrictive"],
+    [-1,"B. Controlled"],
+    [0,"C. Neutral"],
+    [1,"D. Open"],
+    [2,"E. No borders"]
+  ] : [
+    [2,"Strongly Agree"],
+    [1,"Agree"],
+    [0,"Neutral"],
+    [-1,"Disagree"],
+    [-2,"Strongly Disagree"]
+  ];
+
+  options.forEach(o => {
+    const opt = document.createElement("option");
+    opt.value = o[0];
+    opt.text = o[1];
+    select.appendChild(opt);
+  });
+
+  div.appendChild(select);
+  form.appendChild(div);
+});
+
+// ----------------------
+// SUBMIT
+// ----------------------
+function submitQuiz() {
+  let econ=0, social=0, global=0;
+  let ec=0, sc=0, gc=0;
+
+  questions.forEach((q,i)=>{
+    const val = parseInt(document.forms["quizForm"]["q"+i].value);
+
+    if(q.axis==="econ"){ econ+=val*(q.weight||1); ec++; }
+    if(q.axis==="social"){ social+=val*(q.weight||1); sc++; }
+    if(q.axis==="global"){ global+=val*(q.weight||1); gc++; }
+  });
+
+  econ/=ec; social/=sc; global/=gc;
+
+  const result = getIdeology(econ,social,global);
+  showResult(result);
+}
+
+// ----------------------
+// IDEOLOGY LOGIC
+// ----------------------
+function getIdeology(e,s,g){
+  if(e<-0.5 && s>0.5) return "Libertarian";
+  if(e>0.7 && s>0.3) return "Democratic Socialist";
+  if(e>1 && s<-0.5) return "Socialist";
+  if(e>0.3 && g>0.5) return "Progressive";
+  if(e<0 && g<-0.7) return "MAGA";
+  if(g>0.5 && s<0) return "Neo-Con";
+  return "Moderate";
+}
+
+// ----------------------
+// SHOW RESULT
+// ----------------------
+function showResult(result){
+
+  const data = resultsData[result];
+
+  document.getElementById("resultText").innerText =
+    "Congratulations! We think you fit in with the " + result + " camp!";
+
+  document.getElementById("resultName").innerText = data.name;
+
+  const img = document.getElementById("resultImage");
+  img.src = data.image;
+  img.alt = data.name;
+
+  const link = document.getElementById("resultLink");
+  link.href = data.link;
+  link.innerText = "Learn more about " + data.name;
+
+  document.getElementById("quizForm").classList.add("hidden");
+  document.getElementById("submitSection").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+}
+
+// ----------------------
+// RETAKE QUIZ
+// ----------------------
+function retakeQuiz(){
+  document.getElementById("quizForm").reset();
+
+  document.getElementById("quizForm").classList.remove("hidden");
+  document.getElementById("submitSection").classList.remove("hidden");
+
+  document.getElementById("result").classList.add("hidden");
+
+  window.scrollTo(0,0);
+}
+
+</script>
+
+</body>
+</html>
